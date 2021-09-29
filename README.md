@@ -22,8 +22,8 @@
 
 ### Covid Population by Region
 * Total population: 1714  
-| Region | New Cases | Ratio (%) | New Cases/1M |
-| ------ | --------- | --------- | ------------ |
+| Region | New Cases | Ratio (%) | New Cases/1M |  
+| ------ | --------- | --------- | ------------ |  
 | Seoul | 644 | 37.6 | 67.4 |  
 | Gyeongi | 529 | 30.9 | 39.1 |  
 | Busan | 38 | 2.2 | 11.3 |  
