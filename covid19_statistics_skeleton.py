@@ -21,7 +21,7 @@ print('| Region | Population | Ratio (%) |')
 print('| ------ | ---------- | --------- |')
 for idx, pop in enumerate(n_people):
     ratio = 100*pop/sum_people # TODO: The ratio of new cases to the total
-    print('| %s | %d | %.1f |' % (regions[idx], pop, ratio))
+    print('| %s | %d | %.1f |' % (regions[idx], pop, ratio), '  ')
 print('')
 
 print('### Covid Population by Region')
@@ -30,7 +30,7 @@ print('| Region | New Cases | Ratio (%) | New Cases/1M |')
 print('| ------ | --------- | --------- | ------------ |')
 for idx, pop in enumerate(n_covid):
     ratio = 100*pop/sum_covid # TODO: The ratio of new cases to the total
-    print('| %s | %d | %.1f | %.1f |' % (regions[idx], pop, ratio, norm_covid[idx]))
+    print('| %s | %d | %.1f | %.1f |' % (regions[idx], pop, ratio, norm_covid[idx]), '  ')
 print('')
 
 # TODO: Print COVID-19 new cases by region
