@@ -12,7 +12,6 @@ def read_data(filename):
             for word in line.split(','):
                 values.append(int(word))
             data.append(values)
-    print("데이터 : ", data)
     return data
 
 def add_weighted_average(data, weight):
