@@ -5,6 +5,7 @@ When runner and chaser are getting close,
 the runner change its direction of head to that of runner
 so that runner can run from the chaser more easily.
 (random 10% percentage)
+and somtimes, runner move in a circle shape
 
 Made a score.
 When runner and chaser meet, get 1 score
