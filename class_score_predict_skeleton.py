@@ -22,7 +22,9 @@ if __name__ == '__main__':
     final_range = np.array([0, 100])
                                                  
     # Estimate a line, final = slope * midterm + y_intercept
-    line = [0, 0] # TODO
+    A = np.vstack((scores[:,0], np.ones(len(scores)))).T
+    b = scores[:,1]
+    line = np.matmul(np.linalg.pinv(A), b)
     
     # Predict scores
     final = lambda midterm: line[0] * midterm + line[1]
