@@ -7,15 +7,19 @@ import os
 from gtts import gTTS
 plt.style.use('dark_background')
 
-#
+# 이미지 불러오고 너비, 높이, 이미지 채널 값 저장.
+# 저희집 지하주차장에서 직접 찍은 사진을 사용합니다.
+# spyder anaconda로 실행해서 plot을 통해 중간 이미지들을 확인하실 수 있습니다. 
 img = cv2.imread('img/car6_4.jpg')
 height, width, channel = img.shape
 
+# gray 이미지로 표현.
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 plt.figure(figsize=(12, 10))
+
 plt.imshow(gray, cmap='gray')
 
-#
+# opencv의 gaussian blur를 적용시켜 경계선을 검출을 유용하게 함.
 structuringElement = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
 
 imgTopHat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, structuringElement)
@@ -24,7 +28,6 @@ imgBlackHat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, structuringElement)
 imgGrayscalePlusTopHat = cv2.add(gray, imgTopHat)
 gray = cv2.subtract(imgGrayscalePlusTopHat, imgBlackHat)
 
-#
 img_blurred = cv2.GaussianBlur(gray, ksize=(5, 5), sigmaX=0)
 
 img_thresh = cv2.adaptiveThreshold(
@@ -39,7 +42,7 @@ img_thresh = cv2.adaptiveThreshold(
 plt.figure(figsize=(12, 10))
 plt.imshow(img_thresh, cmap='gray')
 
-#
+# 위에서 추출한 이미지를 통해 경계선 검출.
 contours, _= cv2.findContours(img_thresh,mode=cv2.RETR_TREE,
                               method=cv2.CHAIN_APPROX_SIMPLE)
 
@@ -52,6 +55,7 @@ temp_result = np.zeros((height, width, channel), dtype=np.uint8)
 
 contours_dict = []
 
+# contour(윤곽)들 저장.
 for contour in contours:
     x, y, w, h = cv2.boundingRect(contour)
     cv2.rectangle(temp_result, pt1=(x, y), pt2=(x+w, y+h), 
@@ -71,17 +75,19 @@ for contour in contours:
 plt.figure(figsize=(12, 10))
 plt.imshow(temp_result, cmap='gray')
 
-#
+# 자간 간격, 크기가 일정하고 기울기가 비슷한 번호판의 특징을 이용하여
+# 위 특성이 높은 contour(윤곽)를 찾습니다.
 MIN_AREA = 80
 MIN_WIDTH, MIN_HEIGHT = 2, 8
 MIN_RATIO, MAX_RATIO = 0.25, 1.0
 
+# 번호판으로 추론되는 contour list.
 possible_contours = []
 
 cnt = 0
 for d in contours_dict:
-    area = d['w'] * d['h']
-    ratio = d['w'] / d['h']
+    area = d['w'] * d['h'] # 자간 크기 
+    ratio = d['w'] / d['h'] # 자간 비율 
     
     if area > MIN_AREA \
     and d['w'] > MIN_WIDTH and d['h'] > MIN_HEIGHT \
@@ -92,6 +98,7 @@ for d in contours_dict:
         
 temp_result = np.zeros((height, width, channel), dtype=np.uint8)
 
+# 번호판으로 추론된 contour들 그려주기. 
 for d in possible_contours:
 
     cv2.rectangle(temp_result, pt1=(d['x'], d['y']), pt2=(d['x']+d['w'], d['y']+d['h']), 
@@ -100,7 +107,7 @@ for d in possible_contours:
 plt.figure(figsize=(12, 10))
 plt.imshow(temp_result, cmap='gray')
 
-#
+# 위에서 추론하는 특성들을 이용하여 정렬. 
 MAX_DIAG_MULTIPLYER = 5 
 MAX_ANGLE_DIFF = 12.0 
 MAX_AREA_DIFF = 0.5 
@@ -178,7 +185,7 @@ for r in matched_result:
 plt.figure(figsize=(12, 10))
 plt.imshow(temp_result, cmap='gray')
 
-#
+# 번호판으로 추론되는 이미지 리스트들 저장. 
 PLATE_WIDTH_PADDING = 1.3
 PLATE_HEIGHT_PADDING = 1.5
 MIN_PLATE_RATIO = 3
@@ -233,7 +240,7 @@ for i, matched_chars in enumerate(matched_result):
     plt.subplot(len(matched_result), 1, i+1)
     plt.imshow(img_cropped, cmap='gray')
     
-#
+# pytesseract를 통해 위에서 추출한 이미지 읽기. 
 longest_idx, longest_text = -1, 0
 plate_chars = []
 
@@ -288,65 +295,8 @@ for i, plate_img in enumerate(plate_imgs):
 
     plt.subplot(len(plate_imgs), 1, i+1)
     plt.imshow(img_result, cmap='gray')
-
-#
-longest_idx, longest_text = -1, 0
-plate_chars = []
-
-for i, plate_img in enumerate(plate_imgs):
-    plate_img = cv2.resize(plate_img, dsize=(0, 0), fx=1.6, fy=1.6)
-    _, plate_img = cv2.threshold(plate_img, thresh=0.0, maxval=255.0, type=cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     
-    contours, _= cv2.findContours(plate_img,mode=cv2.RETR_LIST,method=cv2.CHAIN_APPROX_SIMPLE)
-    plate_min_x, plate_min_y = plate_img.shape[1], plate_img.shape[0]
-    plate_max_x, plate_max_y = 0, 0
-
-    for contour in contours:
-        x, y, w, h = cv2.boundingRect(contour)
-        
-        area = w * h
-        ratio = w / h
-
-        if area > MIN_AREA \
-        and w > MIN_WIDTH and h > MIN_HEIGHT \
-        and MIN_RATIO < ratio < MAX_RATIO:
-            if x < plate_min_x:
-                plate_min_x = x
-            if y < plate_min_y:
-                plate_min_y = y
-            if x + w > plate_max_x:
-                plate_max_x = x + w
-            if y + h > plate_max_y:
-                plate_max_y = y + h
-                
-    img_result = plate_img[plate_min_y:plate_max_y, plate_min_x:plate_max_x]
-    
-    img_result = cv2.GaussianBlur(img_result, ksize=(3, 3), sigmaX=0)
-    _, img_result = cv2.threshold(img_result, thresh=0.0, maxval=255.0, type=cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    img_result = cv2.copyMakeBorder(img_result, top=10, bottom=10, left=10, right=10, borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
-    
-    #chars = pytesseract.image_to_string(img_result, lang='kor', config='--psm 7 --oem 0')
-    chars = pytesseract.image_to_string(img_result, lang='kor')
-    #chars = pytesseract.image_to_string(img_result)
-    
-    result_chars = ''
-    has_digit = False
-    for c in chars:
-        if ord('가') <= ord(c) <= ord('힣') or c.isdigit():
-            if c.isdigit():
-                has_digit = True
-            result_chars += c
-    
-    print("result_chars : ", result_chars)
-    plate_chars.append(result_chars)
-
-    if has_digit and len(result_chars) > longest_text:
-        longest_idx = i
-
-    plt.subplot(len(plate_imgs), 1, i+1)
-    plt.imshow(img_result, cmap='gray')
-    
-#
+# 번호판으로 결정한 부분 빨간색으로 표현. 
 info = plate_infos[longest_idx]
 chars = plate_chars[longest_idx]
 
@@ -354,14 +304,14 @@ print("chars : ", chars)
 
 img_out = img.copy()
 
-cv2.rectangle(img_out, pt1=(info['x'], info['y']), pt2=(info['x']+info['w'], info['y']+info['h']), color=(255,0,0), thickness=2)
+cv2.rectangle(img_out, pt1=(info['x'], info['y']), pt2=(info['x']+info['w'], info['y']+info['h']), color=(255,0,0), thickness=4)
 
 cv2.imwrite(chars + '.jpg', img_out)
 
 plt.figure(figsize=(12, 10))
 plt.imshow(img_out)
 
-#
+# 저장한 텍스트를 gtts를 통해 음성 파일(.mp3)로 저장. 
 tts = gTTS(chars, lang='ko')
 tts.save("car.mp3")
 
